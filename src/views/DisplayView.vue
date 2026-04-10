@@ -21,7 +21,7 @@ const props = defineProps<{
   logoUrl?: string
 }>()
 
-const { prayerTimesToday, prayerTimesTomorrow, updatePrayerTimes, getPrayerMoment } = usePrayerTimes()
+const { prayerTimesToday, updatePrayerTimes } = usePrayerTimes()
 const { displayState, currentPrayerName, countdownTarget, countdownTitle, checkSchedule, resetToNormal } = useSchedule()
 
 const showFullClock = ref(false)
@@ -105,7 +105,7 @@ onUnmounted(() => {
       v-if="displayState === 'countdown_adzan' || displayState === 'countdown_iqomah'"
       :target-time="countdownTarget"
       :title="countdownTitle"
-      :time-name="db.timeName"
+      :time-name="{ Hours: db.timeName.Jam || 'Jam', Minutes: db.timeName.Menit || 'Menit', Seconds: db.timeName.Detik || 'Detik' }"
       @expired="handleCountdownExpired"
     />
 

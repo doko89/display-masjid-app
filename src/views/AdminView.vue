@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import type { Database } from '../lib/types'
 
 const props = defineProps<{
@@ -224,7 +224,7 @@ const removeRunningText = (index: number) => {
       <section class="admin-section">
         <h2>Running Text</h2>
         <button class="btn-add" @click="addRunningText">+ Tambah</button>
-        <div v-for="(text, index) in localDb.running_text" :key="index" class="running-item">
+        <div v-for="(_, index) in localDb.running_text" :key="index" class="running-item">
           <input v-model="localDb.running_text[index]" type="text" />
           <button class="btn-remove" @click="removeRunningText(index)">Hapus</button>
         </div>

@@ -1,4 +1,4 @@
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import type { Database, DisplayState, PrayerKey } from '../lib/types'
 import { usePrayerTimes } from './usePrayerTimes'
 
@@ -22,11 +22,10 @@ export function useSchedule() {
 
     // Check each prayer time
     for (const key of prayerKeys) {
-      const prayerMoment = getPrayerMoment(key, db)
+      const prayerMoment = getPrayerMoment(key)
       const waitAdzanMoment = new Date(prayerMoment.getTime() - db.timer.wait_adzan * 60 * 1000)
       const iqomahEndMoment = new Date(prayerMoment.getTime() + db.timer.adzan * 60 * 1000)
       const iqomahDuration = (db.iqomah[key] || 10) * 60 * 1000
-      const sholatEndMoment = new Date(iqomahEndMoment.getTime() + iqomahDuration)
 
       // Check if it's time for countdown before adzan
       if (
@@ -56,7 +55,7 @@ export function useSchedule() {
       ) {
         // Special handling for Friday Dhuhr (Khutbah instead of Iqomah)
         if (isFriday.value && db.jumat.active && key === 'dhuhr') {
-          showKhutbah(db)
+          showKhutbah()
         } else {
           startCountdownIqomah(
             new Date(iqomahEndMoment.getTime() + iqomahDuration),
@@ -92,12 +91,12 @@ export function useSchedule() {
     currentPrayerName.value = prayerName
   }
 
-  const showKhutbah = (db: Database): void => {
+  const showKhutbah = (): void => {
     displayState.value = 'khutbah'
     countdownTarget.value = null
   }
 
-  const showSholat = (db: Database): void => {
+  const showSholat = (): void => {
     displayState.value = 'sholat'
     countdownTarget.value = null
   }
@@ -108,7 +107,7 @@ export function useSchedule() {
     currentPrayerName.value = ''
 
     // After ending, start countdown to next prayer
-    const next = getNextPrayer(db)
+    const next = getNextPrayer()
     if (next) {
       const waitAdzanMoment = new Date(next.moment.getTime() - db.timer.wait_adzan * 60 * 1000)
       if (waitAdzanMoment > new Date()) {

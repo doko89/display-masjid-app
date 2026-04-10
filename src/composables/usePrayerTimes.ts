@@ -1,5 +1,5 @@
-import { ref, computed } from 'vue'
-import { PrayTimes, prayTimes } from '../lib/PrayTimes'
+import { ref } from 'vue'
+import { PrayTimes } from '../lib/PrayTimes'
 import type { Database, PrayerTimes, PrayerKey } from '../lib/types'
 
 const pt = new PrayTimes('MWL')
@@ -64,8 +64,7 @@ export function usePrayerTimes() {
   const prayerKeys: PrayerKey[] = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha']
 
   const getPrayerMoment = (
-    prayerKey: PrayerKey,
-    db: Database
+    prayerKey: PrayerKey
   ): Date => {
     const times = prayerTimesToday.value
     if (!times) return new Date()
@@ -79,13 +78,13 @@ export function usePrayerTimes() {
     return moment
   }
 
-  const getNextPrayer = (db: Database): { key: PrayerKey; moment: Date } | null => {
+  const getNextPrayer = (): { key: PrayerKey; moment: Date } | null => {
     const now = new Date()
     const times = prayerTimesToday.value
     if (!times) return null
 
     for (const key of prayerKeys) {
-      const moment = getPrayerMoment(key, db)
+      const moment = getPrayerMoment(key)
       if (now < moment) {
         return { key, moment }
       }
@@ -105,15 +104,14 @@ export function usePrayerTimes() {
   }
 
   const isCurrentPrayer = (
-    prayerKey: PrayerKey,
-    db: Database
+    prayerKey: PrayerKey
   ): boolean => {
     const now = new Date()
     const times = prayerTimesToday.value
     if (!times) return false
 
     const keyIndex = prayerKeys.indexOf(prayerKey)
-    const prayerMoment = getPrayerMoment(prayerKey, db)
+    const prayerMoment = getPrayerMoment(prayerKey)
 
     // Current prayer is active 5 minutes before until 5 minutes after
     const startWindow = new Date(prayerMoment.getTime() - 5 * 60 * 1000)
@@ -122,7 +120,7 @@ export function usePrayerTimes() {
     if (now >= startWindow && now <= endWindow) {
       // Check if any later prayer has passed
       for (let i = keyIndex + 1; i < prayerKeys.length; i++) {
-        const laterMoment = getPrayerMoment(prayerKeys[i], db)
+        const laterMoment = getPrayerMoment(prayerKeys[i])
         if (now > laterMoment) {
           return false
         }

@@ -9,9 +9,14 @@ export interface CalculationMethod {
 
 export interface PrayerTimesConfig {
   imsak: string
+  fajr: string | number
   dhuhr: string
   asr: string
+  maghrib: string | number
+  isha: string | number
+  midnight: string
   highLats: string
+  [key: string]: string | number
 }
 
 export interface TimeOffsets {
@@ -24,6 +29,7 @@ export interface TimeOffsets {
   maghrib?: number
   isha?: number
   midnight?: number
+  [key: string]: number | undefined
 }
 
 export interface PrayerTimesResult {
@@ -143,8 +149,12 @@ export class PrayTimes {
   private calcMethod = 'MWL'
   private setting: PrayerTimesConfig = {
     imsak: '10 min',
+    fajr: 18,
     dhuhr: '0 min',
     asr: 'Standard',
+    maghrib: '0 min',
+    isha: 17,
+    midnight: 'Standard',
     highLats: 'NightMiddle',
   }
   private timeFormat = '24h'
@@ -193,13 +203,16 @@ export class PrayTimes {
 
   adjust(params: Record<string, number | string>): void {
     for (const id in params) {
-      this.setting[id] = params[id] as string
+      ;(this.setting as Record<string, string | number>)[id] = params[id]
     }
   }
 
   tune(timeOffsets: TimeOffsets): void {
     for (const i in timeOffsets) {
-      ;(this.offset as Record<string, number>)[i] = timeOffsets[i] as number
+      const value = timeOffsets[i]
+      if (value !== undefined) {
+        ;(this.offset as Record<string, number>)[i] = value
+      }
     }
   }
 
@@ -236,10 +249,10 @@ export class PrayTimes {
         ? [date.getFullYear(), date.getMonth() + 1, date.getDate()]
         : [date.getFullYear(), date.getMonth() + 1, date.getDate()]
 
-    if (typeof timezone === 'undefined' || timezone === 'auto') {
+    if (typeof timezone === 'undefined' || (typeof timezone === 'string' && timezone === 'auto')) {
       timezone = this.getTimeZone(dateArr)
     }
-    if (typeof dst === 'undefined' || dst === 'auto') {
+    if (typeof dst === 'undefined' || (typeof dst === 'string' && dst === 'auto')) {
       dst = this.getDst(dateArr)
     }
     this.timeZone = 1 * timezone + (1 * dst ? 1 : 0)
@@ -285,7 +298,7 @@ export class PrayTimes {
   private asrTime(factor: number, time: number): number {
     const decl = this.sunPosition(this.jDate + time).declination
     const angle = -DMath.arccot(factor + Math.tan(Math.abs(this.lat - decl)))
-    return this.sunAngleTime(angle, time)
+    return this.sunAngleTime(angle, time, 'cw')
   }
 
   private sunPosition(jd: number): SunPosition {
@@ -296,7 +309,6 @@ export class PrayTimes {
       q + 1.915 * DMath.sin(g) + 0.02 * DMath.sin(2 * g)
     )
 
-    const R = 1.00014 - 0.01671 * DMath.cos(g) - 0.00014 * DMath.cos(2 * g)
     const e = 23.439 - 0.00000036 * D
 
     const RA = DMath.arctan2(DMath.cos(e) * DMath.sin(L), DMath.cos(L)) / 15
@@ -327,14 +339,14 @@ export class PrayTimes {
     times = this.dayPortion(times)
     const params = this.setting
 
-    const imsak = this.sunAngleTime(this.eval(params.imsak), times.imsak, 'ccw')
-    const fajr = this.sunAngleTime(this.eval(params.fajr), times.fajr, 'ccw')
+    const imsak = this.sunAngleTime(this.eval(String(params.imsak)), times.imsak, 'ccw')
+    const fajr = this.sunAngleTime(this.eval(String(params.fajr)), times.fajr, 'ccw')
     const sunrise = this.sunAngleTime(this.riseSetAngle(), times.sunrise, 'ccw')
     const dhuhr = this.midDay(times.dhuhr)
-    const asr = this.asrTime(this.asrFactor(params.asr), times.asr)
-    const sunset = this.sunAngleTime(this.riseSetAngle(), times.sunset)
-    const maghrib = this.sunAngleTime(this.eval(params.maghrib), times.maghrib)
-    const isha = this.sunAngleTime(this.eval(params.isha), times.isha)
+    const asr = this.asrTime(this.asrFactor(String(params.asr)), times.asr)
+    const sunset = this.sunAngleTime(this.riseSetAngle(), times.sunset, 'cw')
+    const maghrib = this.sunAngleTime(this.eval(String(params.maghrib)), times.maghrib, 'cw')
+    const isha = this.sunAngleTime(this.eval(String(params.isha)), times.isha, 'cw')
 
     return {
       imsak,
@@ -405,16 +417,16 @@ export class PrayTimes {
       times = this.adjustHighLats(times)
     }
 
-    if (this.isMin(params.imsak)) {
-      times.imsak = times.fajr - this.eval(params.imsak) / 60
+    if (this.isMin(String(params.imsak))) {
+      times.imsak = times.fajr - this.eval(String(params.imsak)) / 60
     }
-    if (this.isMin(params.maghrib)) {
-      times.maghrib = times.sunset + this.eval(params.maghrib) / 60
+    if (this.isMin(String(params.maghrib))) {
+      times.maghrib = times.sunset + this.eval(String(params.maghrib)) / 60
     }
-    if (this.isMin(params.isha)) {
-      times.isha = times.maghrib + this.eval(params.isha) / 60
+    if (this.isMin(String(params.isha))) {
+      times.isha = times.maghrib + this.eval(String(params.isha)) / 60
     }
-    times.dhuhr += this.eval(params.dhuhr) / 60
+    times.dhuhr += this.eval(String(params.dhuhr)) / 60
 
     return times
   }
@@ -443,7 +455,7 @@ export class PrayTimes {
     for (const i in times) {
       result[i] = this.getFormattedTime(times[i], this.timeFormat)
     }
-    return result as PrayerTimesResult
+    return result as unknown as PrayerTimesResult
   }
 
   private adjustHighLats(times: Record<string, number>): Record<string, number> {
@@ -453,27 +465,27 @@ export class PrayTimes {
     times.imsak = this.adjustHLTime(
       times.imsak,
       times.sunrise,
-      this.eval(params.imsak),
+      this.eval(String(params.imsak)),
       nightTime,
       'ccw'
     )
     times.fajr = this.adjustHLTime(
       times.fajr,
       times.sunrise,
-      this.eval(params.fajr),
+      this.eval(String(params.fajr)),
       nightTime,
       'ccw'
     )
     times.isha = this.adjustHLTime(
       times.isha,
       times.sunset,
-      this.eval(params.isha),
+      this.eval(String(params.isha)),
       nightTime
     )
     times.maghrib = this.adjustHLTime(
       times.maghrib,
       times.sunset,
-      this.eval(params.maghrib),
+      this.eval(String(params.maghrib)),
       nightTime
     )
 
@@ -520,19 +532,20 @@ export class PrayTimes {
   }
 
   private getDst(date: number[]): number {
-    return 1 * (this.gmtOffset(date) !== this.getTimeZone(date))
+    return Number(this.gmtOffset(date) !== this.getTimeZone(date))
   }
 
   private gmtOffset(date: number[]): number {
     const localDate = new Date(date[0], date[1] - 1, date[2], 12, 0, 0, 0)
-    const GMTString = localDate.toGMTString()
+    const GMTString = localDate.toUTCString()
     const GMTDate = new Date(GMTString.substring(0, GMTString.lastIndexOf(' ') - 1))
     const hoursDiff = (localDate.getTime() - GMTDate.getTime()) / (1000 * 60 * 60)
     return hoursDiff
   }
 
   private eval(str: string): number {
-    return 1 * (str + '').split(/[^0-9.+-]/)[0]
+    const match = (str + '').split(/[^0-9.+-]/)[0]
+    return match ? Number(match) : 0
   }
 
   private isMin(arg: string): boolean {
