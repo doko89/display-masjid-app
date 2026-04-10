@@ -1,0 +1,40 @@
+@import "tailwindcss";
+
+@font-face {
+  font-family: 'Titillium Web';
+  src: url('/fonts/Titillium-Web-ExtraLight.ttf.woff') format('woff'),
+       url('/fonts/Titillium-Web-ExtraLight.ttf.svg#Titillium-Web-ExtraLight') format('svg'),
+       url('/fonts/Titillium-Web-ExtraLight.ttf.eot') format('embedded-opentype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'OpenSansCondLight';
+  src: url('/fonts/OpenSansCondLight/OpenSansCondLight.eot');
+  src: local('OpenSansCondLight'),
+       url('/fonts/OpenSansCondLight/OpenSansCondLight.woff') format('woff'),
+       url('/fonts/OpenSansCondLight/OpenSansCondLight.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: "Arial";
+  src: url("/fonts/Arial/Arial.eot");
+  src: url("/fonts/Arial/Arial.eot?#iefix") format("embedded-opentype"),
+       url("/fonts/Arial/Arial.woff2") format("woff2"),
+       url("/fonts/Arial/Arial.woff") format("woff"),
+       url("/fonts/Arial/Arial.ttf") format("truetype"),
+       url("/fonts/Arial/Arial.svg#Arial") format("svg");
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Titillium Web', Arial, sans-serif;
+  overflow: hidden;
+  background: #122;
+}
